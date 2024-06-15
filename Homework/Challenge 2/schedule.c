@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <assert.h>
 
 typedef struct node node;
 
@@ -137,6 +138,7 @@ void add_task(schedule* s, node* n)
         }
         current = current->next;
     }
+    s->size++;
 }
 
 // Function to check if task is in the scheduler
@@ -231,6 +233,14 @@ void print_schedule(schedule* sch)
     }
     printf("\n");
 }
+
+/**
+ * scheduler(g, sch, total_tasks, total_edges) = sch' : schedule
+ * post-condition: sch'.head = NULL if cycle detected
+ *               sch'.head = {n_1, n_2, ..., n_i} where n_i is a node in g
+ *              sch'.size = total_tasks
+ * repr(sch') = {sch'.head, sch'.head->next, ... sch'.head->next^k} where k <= sch'.size
+*/
 schedule* scheduler(struct graph* g, schedule* sch, int total_tasks, int total_edges)
 {
     stack* stk = create_stack();
@@ -274,8 +284,8 @@ schedule* scheduler(struct graph* g, schedule* sch, int total_tasks, int total_e
             push(stk, current);
         }
     }
-    // reverse the schedule
-    //reverse_schedule(sch);
+    assert(sch->size == total_tasks);
+
     return sch;
 }
 
