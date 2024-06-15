@@ -201,7 +201,7 @@ void print_stack(stack* s)
 }
 
 /**
- * Prints contents of a queue
+ * Prints contents of a graph
 */
 void print_graph(graph* g)
 {
@@ -217,24 +217,9 @@ void print_graph(graph* g)
     }
 }
 
-// reverse a schedule
-schedule* reverse_schedule(schedule* sch)
-{
-    node* current = sch->head;
-    node* prev = NULL;
-    node* next = NULL;
-
-    while(current != NULL)
-    {
-        next = current->next;
-        current->next = prev;
-        prev = current;
-        current = next;
-    }
-    sch->head = prev;
-    return sch;
-}
-
+/**
+ * prints contents of a schedule
+*/
 void print_schedule(schedule* sch)
 {
     node* current = sch->head;
