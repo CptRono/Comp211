@@ -110,10 +110,9 @@ schedule* create_schedule()
  * post-condition: s'.head = n
  *                n.next = s.head
  *                s'.size = s.size + 1
- * repr(s') = {n, s.head, ...} = {n, s->head, s->head->next, ..., s->head->next^k}
+ * repr(s') = {s.head, ..., n} = {s->head, s->head->next, ..., s->head->next^k, n}
  *             where k <= s.size
 */
-void print_schedule(schedule* sch);
 void add_task(schedule* s, node* n)
 {
     node* new_task = malloc(sizeof(node));
