@@ -12,23 +12,41 @@ typedef struct graph {
 } graph ;
 
 // list-backed stack
+/**
+ * where s : stack, s has a set of linked nodes N
+ * repr(s) = {s->head, s->head->next, ... s->head->next^k}
+ *         where k <= s.size
+ *         s.size = number of nodes in stack
+*/
 typedef struct stack{
-    node* head;
-    node* tail;
+    node* head; 
     int size;
 } stack;
 
 // Function to create a new stack
+/**
+ * create_stack() = s : stack
+ * post-condition: s.head = NULL
+ *                s.size = 0
+ * repr(s) = {s->head} where s->head = NULL
+*/
 stack* create_stack()
 {
     stack* s = malloc(sizeof(stack));
-    s->head = NULL;
-    s->tail = NULL;
+    s->head = NULL; //
     s->size = 0;
     return s;
 }
 
 // Function to push a node onto the stack
+/**
+ * push(s, n) = s' : stack
+ * post-condition: s'.head = n
+ *                n.next = s.head
+ *                s'.size = s.size + 1
+ * repr(s') = {n, s.head, ...} = {n, s->head, s->head->next, ..., s->head->next^k}
+ *             where k <= s.size
+*/
 void push(stack* s, node* n)
 {
     node* new_node = malloc(sizeof(node));
@@ -41,6 +59,15 @@ void push(stack* s, node* n)
 }
 
 // Function to pop a node from the stack
+/**
+ * pop(s) = n : node
+ * pre-condition: s.size > 0
+ *                repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s->size
+ * post-condition: n = s->head
+ *                 s'->head = s->head->next
+ *                 s'.size = s.size - 1
+ * repr(s') = {s->head->next, ..., s->head->next^k} where s->head->next = n where k <= s->size-1
+*/
 node* pop(stack* s)
 {
     if (s->size == 0) return NULL;
@@ -51,12 +78,24 @@ node* pop(stack* s)
 }
 
 // list-backed queue of tasks
+/**
+ * where sch : schedule, sch has a set of linked nodes N
+ * repr(sch) = {sch->head, sch->head->next, ... sch->head->next^k}
+ *         where k <= sch.size
+ *         sch.size = number of nodes in schedule
+*/
 typedef struct schedule{
     node* head;
     int size;
 } schedule;
 
-// Function to create a new scheduler
+// Function to create a new schedule
+/**
+ * create_schedule() = sch : schedule
+ * post-condition: sch.head = NULL
+ *                sch.size = 0
+ * repr(sch) = {sch->head} where sch->head = NULL
+*/
 schedule* create_schedule()
 {
     schedule* s = malloc(sizeof(schedule));
@@ -66,18 +105,48 @@ schedule* create_schedule()
 }
 
 // Function to add a task to the scheduler
+/**
+ * add_task(s, n) = s' : schedule
+ * post-condition: s'.head = n
+ *                n.next = s.head
+ *                s'.size = s.size + 1
+ * repr(s') = {n, s.head, ...} = {n, s->head, s->head->next, ..., s->head->next^k}
+ *             where k <= s.size
+*/
+void print_schedule(schedule* sch);
 void add_task(schedule* s, node* n)
 {
     node* new_task = malloc(sizeof(node));
     // copy data to new node
     new_task->vertex = n->vertex;
-    new_task->next = s->head;
-    // make new node the head
-    s->head = new_task;
-    s->size++;
+    new_task->next = NULL;
+
+    // add new node to end of schedule
+    node* current = s->head;
+    if(current == NULL)
+    {
+        s->head = new_task;
+        s->size++;
+        return;
+    }
+    while(current != NULL)
+    {
+        if(current->next == NULL)
+        {
+            current->next = new_task;
+            break;
+        }
+        current = current->next;
+    }
 }
 
 // Function to check if task is in the scheduler
+/**
+ * sch_has_task(s : schedule, n : int) = true, if n is in s
+ *                    = false, otherwise
+ * true if: repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s.size and n = s->head->vertex or n = s->head->next^k->vertex
+ * 
+*/
 bool sch_has_task(schedule* s, node* n)
 {
     node* current = s->head;
@@ -90,6 +159,12 @@ bool sch_has_task(schedule* s, node* n)
 }
 
 // Function to check if task is in the stack
+/**
+ * stk_has_task(s : stack, n : int) = true, if n is in s
+ *                    = false, otherwise
+ * true if: repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s.size and n = s->head->vertex or n = s->head->next^k->vertex
+ * 
+*/
 bool stk_has_task(stack* s, node* n)
 {
     node* current = s->head;
@@ -102,11 +177,18 @@ bool stk_has_task(stack* s, node* n)
 }
 
 // Function that checks if stack is empty
+/**
+ * stk_empty(s : stack) = true, if s.size = 0
+ *                     = false, otherwise
+*/
 bool stk_empty(stack* s)
 {
     return s->size == 0;
 }
 
+/**
+ * Prints contents of a stack
+*/
 void print_stack(stack* s)
 {
     node* current = s->head;
@@ -118,6 +200,9 @@ void print_stack(stack* s)
     printf("\n");
 }
 
+/**
+ * Prints contents of a queue
+*/
 void print_graph(graph* g)
 {
     for (int i = 0; i < g->num_vertices; i++)
@@ -132,6 +217,24 @@ void print_graph(graph* g)
     }
 }
 
+// reverse a schedule
+schedule* reverse_schedule(schedule* sch)
+{
+    node* current = sch->head;
+    node* prev = NULL;
+    node* next = NULL;
+
+    while(current != NULL)
+    {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    sch->head = prev;
+    return sch;
+}
+
 void print_schedule(schedule* sch)
 {
     node* current = sch->head;
@@ -139,93 +242,97 @@ void print_schedule(schedule* sch)
     printf("\n");
     while(current != NULL)
     {
-        printf("%d, ", current->vertex);
+        printf("%d\n", current->vertex);
         current = current->next;
     }
     printf("\n");
 }
-
 schedule* scheduler(struct graph* g, schedule* sch, int total_tasks, int total_edges)
 {
-    if (g == NULL) return NULL;
     stack* stk = create_stack();
-    printf("sched 1\n");
+    node* init_node = g->adjacency_list[0];
+    push(stk, init_node);  // push first node to stack
 
-    // push tasks to the stack
-    for(int i = 0; i < total_tasks; i++)    // PROBLEM?? when should this stop?
-    {
-        //printf("sched 2\n");
-
-        node* n = g->adjacency_list[i];
-        //printf("big loop vertex = %d\n", n->vertex);
-        if(n->next == NULL) break;
-
-        //printf("sched 3\n");
-
-        while(stk_has_task(stk, n) && n->next != NULL) n = n->next; // skip to next directly connected node that is not already in stack
-        
-        //printf("sched 4\n");
-        
-        while(n != NULL)
-        {
-            //printf("sched loop 1\n");
-            if(!sch_has_task(sch, n) && !stk_has_task(stk, n)) // hasnt been scheduled or waiting to be scheduled
-            {
-                push(stk, n);   // waiting to be scheduled
-                printf("%d pushed to stack.printing stack\n", n->vertex);
-                print_stack(stk);
-                
-            }
-            //printf("sched loop 2\n");
-            n = n->next;    // move to node directly connected to current node
-            if (n == NULL) //has no dependencies
-            {
-                n = pop(stk);
-                printf("%d popped from stack.printing stack\n", n->vertex);
-                print_stack(stk);
-
-                add_task(sch, n);
-                printf("%d scheduled. printing schedule \n", n->vertex);
-                print_schedule(sch);
-
-                free(n);
-                break;
-            }
-            //printf("sched loop 3\n");
-
-            //printf("small loop vertex: %d\n", g->adjacency_list[n->vertex]->vertex);
-            
-            n = stk->head;   // backtrack to previous node (now at top of stack)
-            //n = g->adjacency_list[n->vertex];   // move to current node's adjacency list
-            //printf("sched loop 4\n");
-        }
-    }
-
-    /** pop everything off the stack and push to schedule once all nodes have been visited
+    // while stack is not empty
     while(!stk_empty(stk))
     {
-        node* n = pop(stk);
-        add_task(sch, n);
-        free(n);
+        // take the top node from stack and add directly connected nodes to stack in the while loop
+        node* top_of_stack = stk->head;
+
+        // add to schedule if node has no dependencies
+        if(g->adjacency_list[top_of_stack->vertex]->next == NULL)
+        {
+            node* popped = pop(stk);
+            add_task(sch, popped);
+            continue;
+        }
+
+         // go to adjacency list of current node
+        node* current = g->adjacency_list[top_of_stack->vertex];
+
+        // if 1st node in adjlist has been scheduled, all nodes in that list have been scheduled
+        // so pop top node in stack and add to schedule
+        if(sch_has_task(sch, current->next))
+        {
+            node* popped = pop(stk);
+            add_task(sch, popped);
+            continue;
+        }
+        // else push directly connected nodes to stack
+        while(current->next != NULL)
+        {
+            current = current->next;
+            if(stk_has_task(stk, current))  // node already in stack, hence cycle detected
+            {
+                sch->head = NULL;
+                return sch; 
+            }
+            push(stk, current);
+        }
     }
-    */
+    // reverse the schedule
+    //reverse_schedule(sch);
     return sch;
 }
 
-
-
 int main(void)
 {
-    printf("1\n");
     schedule* sch = create_schedule();
 
-    printf("2\n");
+
+    char filename[100];
+    printf("Please enter name of file: ");
+    scanf("%s", filename);
+
+    FILE* fptr;
     
-    graph* g = graph_create(9);
+    fptr = fopen(filename, "r");
+    if(fptr == NULL)
+    {
+        printf("Error opening file\n");
+        return 1;
+    }
 
-    printf("3\n");
+    
+    int from, to;
+    int nodes_count, vertices_count;
 
-    graph_add_edge(g, 0, 1);
+    fscanf(fptr, "%d\n", &nodes_count);
+    fscanf(fptr, "%d\n", &vertices_count);
+
+    graph* g = graph_create(nodes_count);
+    
+    for(int i = 0; i < vertices_count; i++)
+    {
+        fscanf(fptr,"%d -> %d\n", &from, &to);
+        graph_add_edge(g, from, to);
+    }
+    
+    
+    
+
+
+/*     graph_add_edge(g, 0, 1);
     printf("4\n");
     graph_add_edge(g, 0, 2);
     graph_add_edge(g, 0, 3);
@@ -237,10 +344,12 @@ int main(void)
     graph_add_edge(g, 5, 7);
     graph_add_edge(g, 6, 7);
     graph_add_edge(g, 7, 8);
+    //graph_add_edge(g, 8, 2);
     print_graph(g);
     printf("5\n");
+    */
 
     scheduler(g, sch, 9, 11);
-    printf("6\n");
-    print_schedule(sch);
+    if(sch->head == NULL) printf("Cycle detected.\n");
+    else print_schedule(sch);
 }
