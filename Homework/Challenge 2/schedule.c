@@ -1,94 +1,11 @@
 #include "graph.h"
+#include "stack.h"
+#include "schedule.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
-
-typedef struct node node;
-
-typedef struct graph {
-    node** adjacency_list ; // array of pointers to nodes
-    int num_vertices ;
-    int num_edges ;
-} graph ;
-
-// list-backed stack
-/**
- * where s : stack, s has a set of linked nodes N
- * repr(s) = {s->head, s->head->next, ... s->head->next^k}
- *         where k <= s.size
- *         s.size = number of nodes in stack
-*/
-typedef struct stack{
-    node* head; 
-    int size;
-} stack;
-
-// Function to create a new stack
-/**
- * create_stack() = s : stack
- * post-condition: s.head = NULL
- *                s.size = 0
- * repr(s) = {s->head} where s->head = NULL
-*/
-stack* create_stack()
-{
-    stack* s = malloc(sizeof(stack));
-    s->head = NULL; //
-    s->size = 0;
-    return s;
-}
-
-// Function to push a node onto the stack
-/**
- * push(s, n) = s' : stack
- * post-condition: s'.head = n
- *                n.next = s.head
- *                s'.size = s.size + 1
- * repr(s') = {n, s.head, ...} = {n, s->head, s->head->next, ..., s->head->next^k}
- *             where k <= s.size
-*/
-void push(stack* s, node* n)
-{
-    node* new_node = malloc(sizeof(node));
-    // copy data to new node
-    new_node->vertex = n->vertex;
-    new_node->next = s->head;
-    // make new node the head
-    s->head = new_node;
-    s->size++;
-}
-
-// Function to pop a node from the stack
-/**
- * pop(s) = n : node
- * pre-condition: s.size > 0
- *                repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s->size
- * post-condition: n = s->head
- *                 s'->head = s->head->next
- *                 s'.size = s.size - 1
- * repr(s') = {s->head->next, ..., s->head->next^k} where s->head->next = n where k <= s->size-1
-*/
-node* pop(stack* s)
-{
-    if (s->size == 0) return NULL;
-    node* n = s->head;
-    s->head = s->head->next;
-    s->size--;
-    return n;
-}
-
-// list-backed queue of tasks
-/**
- * where sch : schedule, sch has a set of linked nodes N
- * repr(sch) = {sch->head, sch->head->next, ... sch->head->next^k}
- *         where k <= sch.size
- *         sch.size = number of nodes in schedule
-*/
-typedef struct schedule{
-    node* head;
-    int size;
-} schedule;
 
 // Function to create a new schedule
 /**
@@ -143,9 +60,9 @@ void add_task(schedule* s, node* n)
 
 // Function to check if task is in the scheduler
 /**
- * sch_has_task(s : schedule, n : int) = true, if n is in s
+ * sch_has_task(s : schedule, n : node*) = true, if n is in s
  *                    = false, otherwise
- * true if: repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s.size and n = s->head->vertex or n = s->head->next^k->vertex
+ * true if: repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s.size and n->vertex = s->head->vertex or n->vertex = s->head->next^k->vertex
  * 
 */
 bool sch_has_task(schedule* s, node* n)
@@ -157,48 +74,6 @@ bool sch_has_task(schedule* s, node* n)
         current = current->next;
     }
     return false;
-}
-
-// Function to check if task is in the stack
-/**
- * stk_has_task(s : stack, n : int) = true, if n is in s
- *                    = false, otherwise
- * true if: repr(s) = {s->head, s->head->next, ... s->head->next^k} where k <= s.size and n = s->head->vertex or n = s->head->next^k->vertex
- * 
-*/
-bool stk_has_task(stack* s, node* n)
-{
-    node* current = s->head;
-    while (current != NULL)
-    {
-        if(current->vertex == n->vertex) return true;
-        current = current->next;
-    }
-    return false;
-}
-
-// Function that checks if stack is empty
-/**
- * stk_empty(s : stack) = true, if s.size = 0
- *                     = false, otherwise
-*/
-bool stk_empty(stack* s)
-{
-    return s->size == 0;
-}
-
-/**
- * Prints contents of a stack
-*/
-void print_stack(stack* s)
-{
-    node* current = s->head;
-    while(current != NULL)
-    {
-        printf("--%d--", current->vertex);
-        current = current->next;
-    }
-    printf("\n");
 }
 
 /**
@@ -321,28 +196,6 @@ int main(void)
         fscanf(fptr,"%d -> %d\n", &from, &to);
         graph_add_edge(g, from, to);
     }
-    
-    
-    
-
-
-/*     graph_add_edge(g, 0, 1);
-    printf("4\n");
-    graph_add_edge(g, 0, 2);
-    graph_add_edge(g, 0, 3);
-    graph_add_edge(g, 1, 4);
-    graph_add_edge(g, 2, 5);
-    graph_add_edge(g, 2, 6);
-    graph_add_edge(g, 3, 7);
-    graph_add_edge(g, 4, 7);
-    graph_add_edge(g, 5, 7);
-    graph_add_edge(g, 6, 7);
-    graph_add_edge(g, 7, 8);
-    //graph_add_edge(g, 8, 2);
-    print_graph(g);
-    printf("5\n");
-    */
-
     scheduler(g, sch, 9, 11);
     if(sch->head == NULL) printf("Cycle detected.\n");
     else print_schedule(sch);
