@@ -47,6 +47,7 @@ typedef struct node{
 typedef struct list{
     node* head;
     node* tail;
+    int size;
 } list;
 
 /** repr(dict) = { (k, v) : k is a key in dict, v is a value where v = dict[k] }
@@ -63,7 +64,7 @@ typedef struct list{
  * */ 
 
 typedef struct dict{
-    node* table[TBL_SIZE];
+    list* table[TBL_SIZE];
     int size;
 } dict;
 
@@ -75,17 +76,17 @@ struct dict* dict_create()
 
     for (int i = 0; i < TBL_SIZE; i++)
     {
-        // add dummy head nodes to each index of the table
-        node* head = malloc(sizeof(node));
-        head->key = NULL;
-        head->value = 0;
-        d->table[i] = head;
-
-        // add dummy node to end of each list
-        node* tail = malloc(sizeof(node));
-        tail->key = NULL;
-        tail->value = 0;
-        head->next = tail;
+        // add list to each index of the table
+        list* l = malloc(sizeof(list));
+        l->head = malloc(sizeof(node));
+        l->tail = malloc(sizeof(node));
+        d->table[i] = l;
+        // add dummy head and tail nodes to each list in the table
+        l->head->key = NULL;
+        l->tail->key = NULL;
+        l->head->next = l->tail;
+        l->tail->next = NULL;
+        l->size = 0;
     }
     d->size = 0;
     // invariant: size of dict should be non-negative
@@ -108,9 +109,9 @@ unsigned int dict_size(struct dict* d)
 bool dict_contains(struct dict* d, char* s)
 {
     int index = hash(s) % TBL_SIZE;
-    if (d->table[index]->next->key == NULL) return false;   // if list is empty
+    if (d->table[index]->head->next->key == NULL) return false;   // if list is empty
 
-    node* ptr = d->table[index]->next;
+    node* ptr = d->table[index]->head->next;
 
     while (ptr->key != NULL && ptr != NULL)
     {
@@ -137,7 +138,7 @@ void dict_add(struct dict* d, char* s, int n)
     int index = hash(s) % TBL_SIZE;
 
     //printf("reached dict add 2\n");
-    node* ptr = d->table[index]->next;     // start at node after dummy head
+    node* ptr = d->table[index]->head->next;     // start at node after dummy head
     //printf("reached dict add 3\n");
 
     // replace value if key already exists
@@ -166,9 +167,10 @@ void dict_add(struct dict* d, char* s, int n)
         newnode->value = n;
 
         // add new node after dummy head node
-        newnode->next = d->table[index]->next;
-        d->table[index]->next = newnode;
+        newnode->next = d->table[index]->head->next;
+        d->table[index]->head->next = newnode;
         d->size++;
+        d->table[index]->size += 1;    // increment size of list
         //printf("reached dict add 7\n");
     }
     //printf("reached dict add 8\n");
@@ -188,7 +190,7 @@ int dict_get(struct dict* d, char* s)
     assert(dict_contains(d, s));
 
     int index = hash(s) % TBL_SIZE;
-    node* ptr = d->table[index]->next;
+    node* ptr = d->table[index]->head->next;
 
     while(ptr->key != NULL)
     {
@@ -217,8 +219,8 @@ void dict_delete(struct dict* d, char* s)
     {
         int index = hash(s) % TBL_SIZE;
 
-        node* ptr = d->table[index]->next;     // start at node after dummy head
-        node* prev = d->table[index];
+        node* ptr = d->table[index]->head->next;     // start at node after dummy head
+        node* prev = d->table[index]->head;
         node* next = ptr->next;
 
         while(ptr->key != NULL)     // while not at dummy tail node
@@ -234,6 +236,7 @@ void dict_delete(struct dict* d, char* s)
             ptr = next;
             next = next->next;
         }
+        d->table[index]->size -= 1;    // decrement size of list
     }
     // invariant: key s is not in dict when this function terminates
     assert(!dict_contains(d, s));
@@ -252,7 +255,7 @@ void dict_keys_to_array(struct dict* d, char* ks[])
 
     for (int i = 0; i < TBL_SIZE; i++)
     {
-        node* ptr = d->table[i]->next;     // start at node after dummy head
+        node* ptr = d->table[i]->head->next;     // start at node after dummy head
         
         for( ; ptr->key != NULL; ks_index++, ptr = ptr->next)
         {
@@ -271,7 +274,7 @@ void dict_free(struct dict* d)
     for (int i = 0; i < TBL_SIZE; i++)
     {
         
-        node* ptr = d->table[i];
+        node* ptr = d->table[i]->head;
         
         node* next = ptr->next;
         
@@ -296,10 +299,10 @@ void dict_print(struct dict* d)
 {
     for (int i = 0; i < TBL_SIZE; i++)
     {
-        node* ptr = d->table[i]->next;     // start at node after dummy head
+        node* ptr = d->table[i]->head->next;     // start at node after dummy head
 
         printf("{");
-        while(ptr->key != NULL)
+        for( int j = 0; j < d->table[i]->size; j++)
         {
             printf("(%s, %d), ", ptr->key, ptr->value);
             ptr = ptr->next;
